@@ -7,5 +7,5 @@ import { Component } from '@angular/core';
   styleUrl: './log-entry.component.scss'
 })
 export class LogEntryComponent {
-
+  
 }

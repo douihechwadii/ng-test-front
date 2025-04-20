@@ -1,4 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { LogsService } from '../services/logs.service';
+import { Log } from '../model/log.type';
+import { catchError } from 'rxjs';
 
 @Component({
   selector: 'app-logs',
@@ -6,6 +9,18 @@ import { Component } from '@angular/core';
   templateUrl: './logs.component.html',
   styleUrl: './logs.component.scss'
 })
-export class LogsComponent {
-
+export class LogsComponent implements OnInit{
+  logService  = inject(LogsService);
+  logEntries = signal<Array<Log>>([]);
+  ngOnInit(): void {
+    this.logService.getLogsFromApi()
+    .pipe(
+      catchError((err) =>{
+        console.log(err);
+        throw err;
+      })
+    ).subscribe((logs) => {
+      this.logEntries.set(logs);
+    })    
+  }
 }
