@@ -1,26 +1,34 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+// src/app/logs/logs.component.ts
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { LogsService } from '../services/logs.service';
-import { Log } from '../model/log.type';
-import { catchError } from 'rxjs';
+import { Subscription } from 'rxjs';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-logs',
-  imports: [],
   templateUrl: './logs.component.html',
-  styleUrl: './logs.component.scss'
+  imports: [CommonModule]
 })
-export class LogsComponent implements OnInit{
-  logService  = inject(LogsService);
-  logEntries = signal<Array<Log>>([]);
+export class LogsComponent implements OnInit, OnDestroy {
+  logs: any[] = [];
+  private logSub: Subscription | undefined;
+
+  constructor(private logsService: LogsService) {}
+
   ngOnInit(): void {
-    this.logService.getLogsFromApi()
-    .pipe(
-      catchError((err) =>{
-        console.log(err);
-        throw err;
-      })
-    ).subscribe((logs) => {
-      this.logEntries.set(logs);
-    })    
+    this.logsService.connect();
+
+    this.logSub = this.logsService.logStream$.subscribe(log => {
+      this.logs.push(log);
+      // Optional: Keep the log list size under control
+      if (this.logs.length > 100) {
+        this.logs.shift(); // Remove the oldest log
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.logSub?.unsubscribe();
+    this.logsService.close();
   }
 }
